@@ -72,7 +72,7 @@ uint32_t get_local_pred_pattern(uint32_t *cntr, uint32_t index)
 
 void update_local_pred_pattern(uint32_t *cntr, uint32_t index, uint8_t outcome)
 {
-	return (*(cntr+index) << 1) | outcome);
+	*(cntr + index) = ((*(cntr+index) << 1) | outcome) & localhist_mask;
 }
 
 // Initialize the predictor
