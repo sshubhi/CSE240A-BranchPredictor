@@ -136,5 +136,22 @@ make_prediction(uint32_t pc)
 void
 train_predictor(uint32_t pc, uint8_t outcome)
 {
+	   //Gshare
+	uint32_t pc_xor_ghr = (pc ^ ghr) & pc_index_mask;
+	
+	//Tournament
+	uint32_t pc_index = pc & pc_index_mask;
+	uint32_t localpred_index = get_local_pred_pattern(localhist_table,pc_index);
+    uint32_t globalpred_index = ghr & globalhist_mask;
+	
+	update_2b_cntr(gshare_bht,pc_xor_ghr,outcome);
+	update_2b_cntr(localpred_bht,localpred_index,outcome);
+	update_2b_cntr(globalpred_bht,globalpred_index,outcome);
+	
+	//Update choice_predictor 
+	//update_2b_cntr(choice_predictor,globalpred_bht,outcome);
+
+	ghr = (ghr << 1) | outcome;
+	update_local_pred_pattern(localhist_table,pc_index,outcome);
 	
 }
