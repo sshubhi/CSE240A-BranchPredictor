@@ -11,9 +11,9 @@
 //
 // TODO:Student Information
 //
-const char *studentName = "NAME";
-const char *studentID   = "PID";
-const char *email       = "EMAIL";
+const char *studentName = "Sumiran Shubhi";
+const char *studentID   = "A53314039";
+const char *email       = "sshubhi@eng.ucsd.edu";
 
 //------------------------------------//
 //      Predictor Configuration       //
@@ -32,24 +32,63 @@ int verbose;
 //------------------------------------//
 //      Predictor Data Structures     //
 //------------------------------------//
+uint8_t	*gshare_bht;
+uint8_t *localpred_bht;
+uint8_t	*globalpred_bht;
+uint8_t *choice_predictor;  
+uint32_t *localhist_table;
+uint32_t ghr;
 
-//
-//TODO: Add your own Branch Predictor data structures here
-//
+uint8_t bht_mask = 3;
+uint32_t localhist_mask;
+uint32_t pc_index_mask;
+uint32_t globalhist_mask;
+
+
 
 
 //------------------------------------//
 //        Predictor Functions         //
 //------------------------------------//
 
+uint8_t get_prediction_2b_cntr(uint8_t *cntr, uint32_t index)
+{
+	uint8_t mask = 2;
+	return ((*(cntr+index) & mask)>>1);
+}
+
+void update_2b_cntr(uint8_t *cntr, uint32_t index, uint8_t outcome)
+{
+	if ((outcome == 1) & (*(cntr + index) != 3))
+		*(cntr+index) = (*(cntr + index) + 1) & bht_mask;
+	else if ((outcome == 0) & (*(cntr + index) != 0))
+		*(cntr+index) = (*(cntr+index)+1) & bht_mask;
+}
+
+uint32_t get_local_pred_pattern(uint32_t *cntr, uint32_t index)
+{
+	return (*(cntr + index) & localhist_mask);
+}
+
+void update_local_pred_pattern(uint32_t *cntr, uint32_t index, uint8_t outcome)
+{
+	return (*(cntr+index) << 1) | outcome);
+}
+
 // Initialize the predictor
 //
 void
 init_predictor()
 {
-  //
-  //TODO: Initialize Branch Predictor Data Structures
-  //
+  localhist_mask = (1<<lhistoryBits) - 1;
+  pc_index_mask = (1<<pcIndexBits) - 1;
+  globalhist_mask = (1<<ghistoryBits) - 1;
+  ghr = 0;
+  gshare_bht = (uint8_t *)calloc(1, (pc_index_mask + 1)*sizeof(uint8_t));
+  localpred_bht = (uint8_t *)calloc(1, (localhist_mask+1)*sizeof(localpred_bht));
+  globalpred_bht = (uint8_t *)calloc(1, (globalhist_mask+1)*sizeof(globalpred_bht));
+  choice_predictor = (uint8_t *)calloc(0, (globalhist_mask+1)*sizeof(choice_predictor));
+  localhist_table = (uint32_t *)calloc(2, (pc_index_mask+1)*sizeof(localhist_table)); 
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -58,23 +97,35 @@ init_predictor()
 //
 uint8_t
 make_prediction(uint32_t pc)
-{
-  //
-  //TODO: Implement prediction scheme
-  //
+{	uint8_t	prediction;
+
+    //Gshare
+	uint32_t pc_xor_ghr = (pc ^ ghr) & pc_index_mask;
+	
+	//Tournament
+	uint32_t pc_index = pc & pc_index_mask;
+	uint32_t localpred_index = get_local_pred_pattern(localhist_table,pc_index);
+    uint32_t globalpred_index = ghr & globalhist_mask;
+	
+	//Custom
 
   // Make a prediction based on the bpType
   switch (bpType) {
     case STATIC:
       return TAKEN;
-    case GSHARE:
-    case TOURNAMENT:
+    case GSHARE: {
+		return (get_prediction_2b_cntr(gshare_bht,pc_xor_ghr));
+	}
+    case TOURNAMENT: {
+		prediction = (get_prediction_2b_cntr(choice_predictor,globalpred_index)) ? get_prediction_2b_cntr(globalpred_bht,globalpred_index) : get_prediction_2b_cntr(localpred_bht,localpred_index);
+	}
     case CUSTOM:
     default:
       break;
   }
 
   // If there is not a compatable bpType then return NOTTAKEN
+  printf("Error! No compatible bpType");
   return NOTTAKEN;
 }
 
@@ -85,7 +136,5 @@ make_prediction(uint32_t pc)
 void
 train_predictor(uint32_t pc, uint8_t outcome)
 {
-  //
-  //TODO: Implement Predictor training
-  //
+	
 }
