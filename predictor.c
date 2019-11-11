@@ -132,7 +132,7 @@ int perceptron_calc_output (uint32_t pc)
 	}
 	return perceptron_output;	
 }
-void perceptron_train (uint32_t pc, uint8_t outcome)
+void perceptron_train (uint32_t pc, uint8_t outcome){
 	uint32_t pc_indexed = (pc )& hgp_perceptron_table_mask;	
 	if ((perceptron_predict(pc) != outcome) || (abs(perceptron_calc_output(pc)) < theta)) {
 		for (int i=0; i<hgp_num_weight; i++) {
