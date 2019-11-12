@@ -43,11 +43,11 @@ uint32_t ghr;
 uint8_t *hgp_gshare_bht;
 uint8_t *hgp_choice_predictor;
 int8_t *hgp_perceptron_table;
-uint32_t hgp_ghr_size = 6;
-uint32_t hgp_perceptron_table_index_width = 10;
+uint32_t hgp_ghr_size = 30;
+uint32_t hgp_perceptron_table_index_width = 8;
 uint32_t hgp_perceptron_table_size;
 uint32_t hgp_num_weight;
-int32_t theta = 60;
+int32_t theta = 45;
 
 
 uint8_t bht_mask = 3;
@@ -93,16 +93,16 @@ uint8_t perceptron_predict (uint32_t pc)
 	uint32_t pc_indexed = ( pc ) & hgp_perceptron_table_mask;
 	for (int i=0; i<hgp_num_weight; i++) {
 		if (i == 0) {
-			perceptron_output = *(hgp_perceptron_table + pc_indexed);
+			perceptron_output = *(hgp_perceptron_table + hgp_num_weight*pc_indexed);
 		}
 		else {
 			uint32_t temp;
 			temp = (ghr >> (i-1)) & 1;
 			if (temp) {
-				perceptron_output += *(hgp_perceptron_table + pc_indexed + i);
+				perceptron_output += *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i);
 			}
 			else {
-				perceptron_output -= *(hgp_perceptron_table + pc_indexed + i);
+				perceptron_output -= *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i);
 			}
 		}
 	}
@@ -120,14 +120,14 @@ int perceptron_calc_output (uint32_t pc)
 	
 	for (int i=0; i<hgp_num_weight; i++) {
 		if (i == 0) 
-			perceptron_output = *(hgp_perceptron_table + pc_indexed);
+			perceptron_output = *(hgp_perceptron_table + hgp_num_weight*pc_indexed);
 		else {
 			uint32_t temp;
 			temp = (ghr >> (i-1)) & 1;
 			if (temp)
-				perceptron_output += *(hgp_perceptron_table + pc_indexed + i);
+				perceptron_output += *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i);
 			else
-				perceptron_output -= *(hgp_perceptron_table + pc_indexed + i);
+				perceptron_output -= *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i);
 		}
 	}
 	return perceptron_output;	
@@ -138,13 +138,13 @@ void perceptron_train (uint32_t pc, uint8_t outcome){
 		for (int i=0; i<hgp_num_weight; i++) {
 			if (i == 0) {
 				if (outcome){
-					if (*(hgp_perceptron_table + pc_indexed) != 127) { 
-						*(hgp_perceptron_table + pc_indexed) = *(hgp_perceptron_table + pc_indexed) + 1;
+					if (*(hgp_perceptron_table + hgp_num_weight*pc_indexed) != 127) { 
+						*(hgp_perceptron_table + hgp_num_weight*pc_indexed) = *(hgp_perceptron_table + hgp_num_weight*pc_indexed) + 1;
 					}
 				}	
 				else {
-					if (*(hgp_perceptron_table + pc_indexed) != -128) {
-					*(hgp_perceptron_table + pc_indexed) = *(hgp_perceptron_table + pc_indexed) - 1;	
+					if (*(hgp_perceptron_table + hgp_num_weight*pc_indexed) != -128) {
+					*(hgp_perceptron_table + hgp_num_weight*pc_indexed) = *(hgp_perceptron_table + hgp_num_weight*pc_indexed) - 1;	
 					}
 				}
 			}	
@@ -152,14 +152,14 @@ void perceptron_train (uint32_t pc, uint8_t outcome){
 				uint32_t temp;
 				temp = (ghr >> (i-1)) & 1;
 				if (temp == outcome){
-					if (*(hgp_perceptron_table + pc_indexed + i) != 127){	
+					if (*(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) != 127){	
 
-						*(hgp_perceptron_table + pc_indexed + i) = *(hgp_perceptron_table + pc_indexed + i) + 1;
+						*(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) = *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) + 1;
 					}
 				}
 				else {
-					if (*(hgp_perceptron_table + pc_indexed + i) != -128) {
-						*(hgp_perceptron_table + pc_indexed + i) = *(hgp_perceptron_table + pc_indexed + i) - 1;
+					if (*(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) != -128) {
+						*(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) = *(hgp_perceptron_table + hgp_num_weight*pc_indexed + i) - 1;
 					}
 				}
 			}
@@ -215,10 +215,18 @@ init_predictor()
   }
   for (int i=0; i<hgp_perceptron_table_size;i++) {
 	  for (int j=0; j<hgp_num_weight; j++){
-		if (j==0)
-			*(hgp_perceptron_table + i + j) = 1;
-		else	
-			*(hgp_perceptron_table + i + j) = 0;
+		if (j==0) {
+			*(hgp_perceptron_table + hgp_num_weight*i) = -1;			//hgp_perceptron_table[hgp_num_weight*i]
+		}
+		else {	
+			uint8_t rand_num,result;
+			rand_num = rand();
+			result = rand_num % 2;
+			if (result)
+				*(hgp_perceptron_table + hgp_num_weight*i + j) = 1;
+			else
+				*(hgp_perceptron_table + hgp_num_weight*i + j) = -1;
+		}
 	  }
   }
   

@@ -5,6 +5,7 @@
 //========================================================//
 
 #define _GNU_SOURCE
+#define _XOPEN_SOURCE 700 // or any bigger number
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,14 @@
 FILE *stream;
 char *buf = NULL;
 size_t len = 0;
+uint8_t	*gshare_bht;
+uint8_t *localpred_bht;
+uint8_t	*globalpred_bht;
+uint8_t *choice_predictor;  
+uint32_t *localhist_table;
+uint8_t *hgp_gshare_bht;
+uint8_t *hgp_choice_predictor;
+int8_t *hgp_perceptron_table;
 
 // Print out the Usage information to stderr
 //
@@ -61,7 +70,7 @@ handle_option(char *arg)
 // Reads a line from the input stream and extracts the
 // PC and Outcome of a branch
 //
-// Returns True if Successful 
+// Returns True if Successful
 //
 int
 read_branch(uint32_t *pc, uint8_t *outcome)
@@ -134,6 +143,14 @@ main(int argc, char *argv[])
   printf("Misprediction Rate: %7.3f\n", mispredict_rate);
 
   // Cleanup
+  free(gshare_bht);
+  free(localpred_bht);
+  free(globalpred_bht);
+  free(choice_predictor);
+  free(localhist_table);
+  free(hgp_gshare_bht);
+  free(hgp_choice_predictor);
+  free(hgp_perceptron_table);
   fclose(stream);
   free(buf);
 
